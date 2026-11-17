@@ -1,19 +1,20 @@
-$Url = "https://github.com/debaster2013/slivy/releases/download/game/MrHoppsPlayhouse2.exe"
+$Url = "https://github.com/debaster2013/slivy/releases/download/game/game.zip"
 $OutputDir = "$env:USERPROFILE\Desktop\MrHoppsGame"
+$ZipFile = "$OutputDir\game.zip"
 $OutputExe = "$OutputDir\MrHoppsPlayhouse2.exe"
 
 Write-Host "Создаю папку на рабочем столе..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
-Write-Host "Качаю игру с GitHub (файл весит 76 МБ, подожди немного)..." -ForegroundColor Yellow
-
-# Используем .NET WebClient, который качает бинарники напрямую без HTML-ошибок
+Write-Host "Качаю архив с игрой..." -ForegroundColor Yellow
 $WebClient = New-Object System.Net.WebClient
-$WebClient.DownloadFile($Url, $OutputExe)
+$WebClient.DownloadFile($Url, $ZipFile)
 
-# Проверяем размер скачанного файла
-$FileSize = (Get-Item $OutputExe).Length
-Write-Host "Загрузка завершена! Размер файла: $([math]::Round($FileSize/1MB, 2)) МБ." -ForegroundColor Green
+Write-Host "Распаковываю архив..." -ForegroundColor Yellow
+Expand-Archive -Path $ZipFile -DestinationPath $OutputDir -Force
+
+Write-Host "Удаляю временный архив..." -ForegroundColor Yellow
+Remove-Item $ZipFile
 
 Write-Host "Запускаю игру..." -ForegroundColor Green
 Start-Process $OutputExe
