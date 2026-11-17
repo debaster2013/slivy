@@ -18,3 +18,6 @@ Remove-Item $ZipFile
 
 Write-Host "Запускаю игру..." -ForegroundColor Green
 Start-Process "$OutputExe"
+
+# Автоматически закрываем окно PowerShell после запуска
+exit
