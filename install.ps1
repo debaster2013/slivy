@@ -5,12 +5,35 @@ $OutputExe = "$OutputDir\MrHoppsPlayhouse2.exe"
 Write-Host "Создаю папку на рабочем столе..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
-Write-Host "Качаю игру с GitHub (это может занять немного времени)..." -ForegroundColor Yellow
-Invoke-WebRequest -Uri $Url -OutFile $OutputExe
+Write-Host "Качаю игру с GitHub (файл большой, подожди пару минут)..." -ForegroundColor Yellow
 
-# Проверяем размер файла, чтобы убедиться, что он скачался полностью
-$FileSize = (Get-Item $OutputExe).Length
-Write-Host "Загрузка завершена! Размер файла: $([math]::Round($FileSize/1MB, 2)) МБ." -ForegroundColor Green
+# Используем .NET WebClient с отключением таймаутов для больших файлов
+$WebClient = New-Object System.Net.WebClient
+$WebClient.Headers.Add("User-Agent", "Mozilla/5.0")
 
-Write-Host "Запускаю игру..." -ForegroundColor Green
-Start-Process $OutputExe
+try {
+    $WebClient.DownloadFile($Url, $OutputExe)
+    Write-Host "Загрузка успешно завершена!" -ForegroundColor Green
+}
+catch {
+    Write-Host "Ошибка при скачивании: $_" -ForegroundColor Red
+    exit
+}
+finally {
+    $WebClient.Dispose()
+}
+
+# Проверяем размер файла
+if (Test-Path $OutputExe) {
+    $FileSize = (Get-Item $OutputExe).Length
+    Write-Host "Размер файла: $([math]::Round($FileSize/1MB, 2)) МБ." -ForegroundColor Cyan
+    
+    if ($FileSize -gt 1000000) {
+        Write-Host "Запускаю игру..." -ForegroundColor Green
+        Start-Process $OutputExe
+    } else {
+        Write-Host "Ошибка: файл скачался не полностью или поврежден." -ForegroundColor Red
+    }
+} else {
+    Write-Host "Ошибка: файл не найден на диске." -ForegroundColor Red
+}
