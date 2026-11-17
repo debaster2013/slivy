@@ -5,29 +5,32 @@ $OutputExe = "$OutputDir\MrHoppsPlayhouse2.exe"
 Write-Host "Создаю папку на рабочем столе..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
 
-Write-Host "Получаю прямую ссылку на файл с Google Диска..." -ForegroundColor Yellow
+Write-Host "Качаю игру с Google Диска..." -ForegroundColor Yellow
 
-# Создаем сессию, чтобы обойти предупреждение о вирусах для больших файлов
-$Session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-$InitialUrl = "https://drive.google.com/uc?export=download&id=$FileID"
+# Прямая ссылка с параметром confirm=t для обхода предупреждения о вирусах
+$Url = "https://docs.google.com/uc?export=download&confirm=t&id=$FileID"
 
-# Делаем первый запрос, чтобы получить токен подтверждения
-$Response = Invoke-WebRequest -Uri $InitialUrl -SessionVariable Session -Method Get -ErrorAction SilentlyContinue
-$ConfirmToken = ""
-
-if ($Response.Headers["Set-Cookie"] -match "download_warning_([0-9a-zA-Z_-]+)=([0-9a-zA-Z_-]+)") {
-    $ConfirmToken = $Matches[1] + "=" + $Matches[2]
+# Скачиваем файл с помощью .NET WebClient (он надежнее всего справляется с редиректами Google)
+$WebClient = New-Object System.Net.WebClient
+try {
+    $WebClient.DownloadFile($Url, $OutputExe)
+}
+catch {
+    Write-Host "Первый способ не сработал, пробую запасной..." -ForegroundColor Yellow
+    $AlternateUrl = "https://drive.google.com/uc?export=download&id=$FileID"
+    $WebClient.DownloadFile($AlternateUrl, $OutputExe)
+}
+finally {
+    $WebClient.Dispose()
 }
 
-# Формируем итоговую ссылку с подтверждением
-if ($ConfirmToken -ne "") {
-    $DownloadUrl = "https://drive.google.com/uc?export=download&confirm=$ConfirmToken&id=$FileID"
-} else {
-    $DownloadUrl = $InitialUrl
+# Проверяем, скачался ли реальный exe (если весит меньше 10 КБ, значит скачалась ошибка/HTML)
+$FileSize = (Get-Item $OutputExe).Length
+if ($FileSize -lt 10000) {
+    Write-Host "Ошибка: Google Диск заблокировал прямую скачку. Файл весит всего $FileSize байт." -ForegroundColor Red
+    Write-Host "Решение: Залей этот .exe в GitHub Releases твоего репозитория — оттуда качается в 1 клик без танцев с бубном!" -ForegroundColor Yellow
+    exit
 }
 
-Write-Host "Качаю игру (это может занять время)..." -ForegroundColor Yellow
-Invoke-WebRequest -Uri $DownloadUrl -OutFile $OutputExe -WebSession $Session
-
-Write-Host "Загрузка завершена! Запускаю игру..." -ForegroundColor Green
+Write-Host "Загрузка завершена! Размер файла: $([math]::Round($FileSize/1MB, 2)) МБ. Запускаю игру..." -ForegroundColor Green
 Start-Process $OutputExe
