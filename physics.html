@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Симулятор: Физика, Гравитационные тела и Бильярд</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050508;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #c5c6c7;
+            user-select: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #menuScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1f2833 0%, #050508 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        #menuScreen h1 {
+            font-size: 36px;
+            color: #66fcf1;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px rgba(102, 252, 241, 0.4);
+        }
+        .cards {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 0 20px;
+        }
+        .card {
+            background: rgba(31, 40, 51, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(102, 252, 241, 0.2);
+            border-radius: 16px;
+            padding: 28px;
+            width: 250px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+        }
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: #66fcf1;
+            box-shadow: 0 20px 40px rgba(102, 252, 241, 0.2);
+        }
+        .card h2 {
+            color: #66fcf1;
+            margin: 0 0 12px 0;
+            font-size: 20px;
+        }
+        .card p {
+            color: #8892b0;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .uiPanel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(31, 40, 51, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 18px 22px;
+            border-radius: 14px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            width: 310px;
+            z-index: 10;
+            display: none;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .panel-header h2 {
+            margin: 0;
+            font-size: 16px;
+            color: #66fcf1;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .btn-back {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #c5c6c7;
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+        .btn-back:hover {
+            background: rgba(255, 51, 102, 0.4);
+            color: white;
+        }
+
+        .control-group {
+            margin-bottom: 14px;
+        }
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            margin-bottom: 5px;
+            color: #c5c6c7;
+        }
+        label span {
+            color: #66fcf1;
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+            appearance: none;
+            background: #45a29e;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #66fcf1;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(102, 252, 241, 0.8);
+            transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        select, button.action-btn {
+            width: 100%;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(102, 252, 241, 0.3);
+            background: #0b0c10;
+            color: #c5c6c7;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        select:hover, button.action-btn:hover {
+            border-color: #66fcf1;
+        }
+        button.primary-btn {
+            background: #45a29e;
+            color: #0b0c10;
+            font-weight: bold;
+            border: none;
+        }
+        button.primary-btn:hover {
+            background: #66fcf1;
+            box-shadow: 0 0 15px rgba(102, 252, 241, 0.5);
+        }
+        .hint-text {
+            font-size: 12px;
+            color: #8892b0;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .tool-btn {
+            padding: 8px 6px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(11, 12, 16, 0.6);
+            color: #c5c6c7;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .tool-btn.active {
+            border-color: #66fcf1;
+            background: rgba(102, 252, 241, 0.15);
+            color: #66fcf1;
+            font-weight: bold;
+        }
+        .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="menuScreen">
+        <h1>Выбери режим</h1>
+        <div class="cards">
+            <div class="card" onclick="startMode('physics')">
+                <h2>Физика и Гравитация</h2>
+                <p>Кидай мячи, ставь тела с настраиваемой силой и твердым хитбоксом.</p>
+            </div>
+            <div class="card" onclick="startMode('maze')">
+                <h2>Поиск пути</h2>
+                <p>Ставь старт и финиш, рисуй стены лабиринта и запускай разные алгоритмы поиска.</p>
+            </div>
+            <div class="card" onclick="startMode('mirrorBilliard')">
+                <h2>Плавный Бильярд</h2>
+                <p>Рисуй зеркало одной линией, ставь лампу и наблюдай гипнотическую анимацию лучей!</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="physicsPanel" class="uiPanel">
+        <div class="panel-header">
+            <h2>Физика и Гравитация</h2>
+            <button class="btn-back" onclick="backToMenu()">Меню</button>
+        </div>
+        
+        <div class="control-group">
+            <label>Инструмент клика:</label>
+            <div class="tool-grid">
+                <button class="tool-btn active" id="toolModeBall" onclick="setPhysicsTool('ball')">
+                    <span class="dot" style="background:#ff3366;"></span> Мяч
+                </button>
+                <button class="tool-btn" id="toolModeBlackHole" onclick="setPhysicsTool('blackhole')">
+                    <span class="dot" style="background:#ffffff;"></span> Грави-тело
+                </button>
+            </div>
+            <button class="action-btn primary-btn" onclick="spawnBallAtCenter()">Добавить мяч</button>
+            <button class="action-btn" onclick="spawnBlackHoleAtCenter()">Добавить грави-тело</button>
+            <button class="action-btn" onclick="resetPhysicsLaws()">Сбросить законы</button>
+            <button class="action-btn" onclick="clearPhysicsObjects()">Очистить всё</button>
+            <div class="hint-text">Плюс — притяжение, минус — отталкивание. У тел твердый хитбокс!</div>
+        </div>
+
+        <div class="control-group">
+            <label>Гравитация мира: <span id="valGravity">0.5</span></label>
+            <input type="range" id="gravity" min="0" max="2" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <label>Сила грави-тела: <span id="valBhMass">1500</span></label>
+            <input type="range" id="bhMass" min="-3000" max="3000" step="100" value="1500">
+        </div>
+
+        <div class="control-group">
+            <label>Упругость (отскок): <span id="valBounce">0.75</span></label>
+            <input type="range" id="bounce" min="0" max="1" step="0.05" value="0.75">
+        </div>
+
+        <div class="control-group">
+            <label>Трение воздуха: <span id="valFriction">0.985</span></label>
+            <input type="range" id="friction" min="0.95" max="1" step="0.001" value="0.985">
+        </div>
+    </div>
+
+    <div id="mazePanel" class="uiPanel">
+        <div class="panel-header">
+            <h2>Лабиринт</h2>
+            <button class="btn-back" onclick="backToMenu()">Меню</button>
+        </div>
+
+        <div class="control-group">
+            <label>Инструмент рисования:</label>
+            <div class="tool-grid">
+                <button class="tool-btn active" id="toolWall" onclick="setMazeTool('wall')">
+                    <span class="dot" style="background:#45a29e;"></span> Стена
+                </button>
+                <button class="tool-btn" id="toolErase" onclick="setMazeTool('erase')">
+                    <span class="dot" style="background:#0b0c10; border:1px solid #555;"></span> Ластик
+                </button>
+                <button class="tool-btn" id="toolStart" onclick="setMazeTool('start')">
+                    <span class="dot" style="background:#00ff88;"></span> Старт
+                </button>
+                <button class="tool-btn" id="toolEnd" onclick="setMazeTool('end')">
+                    <span class="dot" style="background:#ff3366;"></span> Финиш
+                </button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Алгоритм поиска:</label>
+            <select id="algoSelect">
+                <option value="astar">A* (A-Star) — умный кратчайший</option>
+                <option value="dijkstra">Дейкстра — точный кратчайший</option>
+                <option value="bfs">Поиск в ширину (BFS) — волна</option>
+                <option value="greedy">Жадный поиск — летит к цели</option>
+            </select>
+        </div>
+
+        <button class="action-btn primary-btn" onclick="runPathfinding()">Найти путь</button>
+        <button class="action-btn" onclick="generateRandomWalls()">Случайные стены</button>
+        <button class="action-btn" onclick="clearPath()">Очистить путь</button>
+        <button class="action-btn" onclick="resetGrid()">Сбросить всё</button>
+    </div>
+
+    <div id="mirrorPanel" class="uiPanel">
+        <div class="panel-header">
+            <h2>Плавный Бильярд</h2>
+            <button class="btn-back" onclick="backToMenu()">Меню</button>
+        </div>
+
+        <div class="control-group">
+            <button class="action-btn primary-btn" onclick="fireLightBurst()">✨ Пустить вспышку света</button>
+            <button class="action-btn" onclick="clearMirrorDrawing()">Стереть рисунок</button>
+            <button class="action-btn" onclick="loadPenrosePreset()">Загрузить Пенроуза</button>
+        </div>
+
+        <div class="control-group">
+            <label>Количество лучей: <span id="valRayCount">200</span></label>
+            <input type="range" id="rayCountSlider" min="50" max="400" step="10" value="200">
+        </div>
+
+        <div class="control-group">
+            <label>Отражений на луч: <span id="valRayBounces">50</span></label>
+            <input type="range" id="rayBouncesSlider" min="10" max="100" step="10" value="50">
+        </div>
+
+        <div class="control-group">
+            <label>Скорость света: <span id="valAnimSpeed">0.006</span></label>
+            <input type="range" id="animSpeedSlider" min="0.002" max="0.02" step="0.002" value="0.006">
+        </div>
+    </div>
+
+    <canvas id="simCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        const menuScreen = document.getElementById('menuScreen');
+        const physicsPanel = document.getElementById('physicsPanel');
+        const mazePanel = document.getElementById('mazePanel');
+        const mirrorPanel = document.getElementById('mirrorPanel');
+
+        let currentMode = null;
+        let animationFrameId = null;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (currentMode === 'maze') initGrid();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function startMode(mode) {
+            currentMode = mode;
+            menuScreen.style.display = 'none';
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (searchInterval) clearInterval(searchInterval);
+
+            physicsPanel.style.display = 'none';
+            mazePanel.style.display = 'none';
+            mirrorPanel.style.display = 'none';
+
+            if (mode === 'physics') {
+                physicsPanel.style.display = 'block';
+                canvas.style.cursor = 'grab';
+                if (balls.length === 0 && blackHoles.length === 0) {
+                    balls.push({
+                        x: canvas.width / 2 - 120, y: 150, radius: 25,
+                        vx: 4, vy: 0, color: '#ff3366', isDragging: false
+                    });
+                    blackHoles.push({
+                        x: canvas.width / 2, y: canvas.height / 2, radius: 30
+                    });
+                }
+                physicsLoop();
+            } else if (mode === 'maze') {
+                mazePanel.style.display = 'block';
+                canvas.style.cursor = 'crosshair';
+                initGrid();
+                mazeLoop();
+            } else if (mode === 'mirrorBilliard') {
+                mirrorPanel.style.display = 'block';
+                canvas.style.cursor = 'crosshair';
+                if (mirrorPoints.length === 0) loadPenrosePreset();
+                mirrorLoop();
+            }
+        }
+
+        function backToMenu() {
+            currentMode = null;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            if (searchInterval) clearInterval(searchInterval);
+            physicsPanel.style.display = 'none';
+            mazePanel.style.display = 'none';
+            mirrorPanel.style.display = 'none';
+            menuScreen.style.display = 'flex';
+        }
+
+        // ==========================================
+        // 1. РЕЖИМ: ФИЗИКА И ГРАВИТАЦИОННЫЕ ТЕЛА
+        // ==========================================
+        const inpGravity = document.getElementById('gravity');
+        const inpBhMass = document.getElementById('bhMass');
+        const inpBounce = document.getElementById('bounce');
+        const inpFriction = document.getElementById('friction');
+
+        const valGravity = document.getElementById('valGravity');
+        const valBhMass = document.getElementById('valBhMass');
+        const valBounce = document.getElementById('valBounce');
+        const valFriction = document.getElementById('valFriction');
+
+        inpGravity.addEventListener('input', () => valGravity.textContent = inpGravity.value);
+        inpBhMass.addEventListener('input', () => valBhMass.textContent = inpBhMass.value);
+        inpBounce.addEventListener('input', () => valBounce.textContent = inpBounce.value);
+        inpFriction.addEventListener('input', () => valFriction.textContent = inpFriction.value);
+
+        function resetPhysicsLaws() {
+            inpGravity.value = 0.5; valGravity.textContent = '0.5';
+            inpBhMass.value = 1500; valBhMass.textContent = '1500';
+            inpBounce.value = 0.75; valBounce.textContent = '0.75';
+            inpFriction.value = 0.985; valFriction.textContent = '0.985';
+        }
+
+        let physicsTool = 'ball';
+
+        function setPhysicsTool(tool) {
+            physicsTool = tool;
+            document.getElementById('toolModeBall').classList.toggle('active', tool === 'ball');
+            document.getElementById('toolModeBlackHole').classList.toggle('active', tool === 'blackhole');
+        }
+
+        let balls = [];
+        let blackHoles = [];
+        let activeBall = null;
+        let mouseHistory = [];
+
+        function getRandomColor() {
+            const colors = ['#ff3366', '#66fcf1', '#45a29e', '#ffd700', '#ff9900', '#9933ff', '#33cc66'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function spawnBall(x, y, vx = (Math.random()-0.5)*6, vy = (Math.random()-0.5)*6) {
+            balls.push({
+                x: x, y: y, radius: 25,
+                vx: vx, vy: vy, color: getRandomColor(), isDragging: false
+            });
+        }
+
+        function spawnBallAtCenter() {
+            spawnBall(canvas.width / 2 + (Math.random() - 0.5) * 100, 100);
+        }
+
+        function spawnBlackHole(x, y) {
+            blackHoles.push({ x: x, y: y, radius: 30 });
+        }
+
+        function spawnBlackHoleAtCenter() {
+            spawnBlackHole(canvas.width / 2 + (Math.random() - 0.5) * 100, canvas.height / 2 + (Math.random() - 0.5) * 100);
+        }
+
+        function clearPhysicsObjects() {
+            balls = [];
+            blackHoles = [];
+            activeBall = null;
+        }
+
+        function physicsLoop() {
+            if (currentMode !== 'physics') return;
+
+            const gravity = parseFloat(inpGravity.value);
+            const bhStrength = parseFloat(inpBhMass.value);
+            const bounce = parseFloat(inpBounce.value);
+            const friction = parseFloat(inpFriction.value);
+
+            for (let ball of balls) {
+                if (!ball.isDragging) {
+                    ball.vy += gravity;
+
+                    for (let bh of blackHoles) {
+                        let dx = bh.x - ball.x;
+                        let dy = bh.y - ball.y;
+                        let distSq = dx * dx + dy * dy + 200;
+                        let dist = Math.sqrt(distSq);
+
+                        if (bhStrength !== 0 && dist > 1) {
+                            let force = bhStrength / distSq;
+                            ball.vx += (dx / dist) * force;
+                            ball.vy += (dy / dist) * force;
+                        }
+
+                        let minDist = ball.radius + bh.radius;
+                        if (dist < minDist && dist > 0) {
+                            let overlap = minDist - dist;
+                            let nx = dx / dist;
+                            let ny = dy / dist;
+
+                            ball.x -= nx * overlap;
+                            ball.y -= ny * overlap;
+
+                            let kx = ball.vx;
+                            let ky = ball.vy;
+                            let p = 2 * (nx * kx + ny * ky);
+                            ball.vx -= p * nx * bounce;
+                            ball.vy -= p * ny * bounce;
+                        }
+                    }
+
+                    ball.vx *= friction;
+                    ball.vy *= friction;
+                    ball.x += ball.vx;
+                    ball.y += ball.vy;
+
+                    if (ball.y + ball.radius > canvas.height) {
+                        ball.y = canvas.height - ball.radius;
+                        ball.vy = -ball.vy * bounce;
+                        ball.vx *= 0.92;
+                        if (Math.abs(ball.vy) < 0.6) ball.vy = 0;
+                    }
+                    if (ball.y - ball.radius < 0) {
+                        ball.y = ball.radius;
+                        ball.vy = -ball.vy * bounce;
+                    }
+                    if (ball.x + ball.radius > canvas.width) {
+                        ball.x = canvas.width - ball.radius;
+                        ball.vx = -ball.vx * bounce;
+                    } else if (ball.x - ball.radius < 0) {
+                        ball.x = ball.radius;
+                        ball.vx = -ball.vx * bounce;
+                    }
+                }
+            }
+
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    let b1 = balls[i];
+                    let b2 = balls[j];
+                    let dx = b2.x - b1.x;
+                    let dy = b2.y - b1.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    let minDist = b1.radius + b2.radius;
+
+                    if (dist < minDist) {
+                        let overlap = minDist - dist;
+                        let nx = dx / (dist || 1);
+                        let ny = dy / (dist || 1);
+
+                        if (!b1.isDragging && !b2.isDragging) {
+                            b1.x -= nx * overlap * 0.5; b1.y -= ny * overlap * 0.5;
+                            b2.x += nx * overlap * 0.5; b2.y += ny * overlap * 0.5;
+                        } else if (!b1.isDragging) {
+                            b1.x -= nx * overlap; b1.y -= ny * overlap;
+                        } else if (!b2.isDragging) {
+                            b2.x += nx * overlap; b2.y += ny * overlap;
+                        }
+
+                        let kx = b1.vx - b2.vx;
+                        let ky = b1.vy - b2.vy;
+                        let p = 2 * (nx * kx + ny * ky) / 2;
+
+                        if (!b1.isDragging) {
+                            b1.vx -= p * nx * bounce; b1.vy -= p * ny * bounce;
+                        }
+                        if (!b2.isDragging) {
+                            b2.vx += p * nx * bounce; b2.vy += p * ny * bounce;
+                        }
+                    }
+                }
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let bh of blackHoles) {
+                let isRepelling = bhStrength < 0;
+                let coreColor = isRepelling ? '#ff3366' : '#ffffff';
+                let auraColor = isRepelling ? 'rgba(255, 51, 102, 0.4)' : 'rgba(102, 252, 241, 0.4)';
+
+                let grad = ctx.createRadialGradient(bh.x, bh.y, bh.radius * 0.3, bh.x, bh.y, bh.radius * 2.8);
+                grad.addColorStop(0, coreColor);
+                grad.addColorStop(0.5, auraColor);
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.beginPath();
+                ctx.arc(bh.x, bh.y, bh.radius * 2.8, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(bh.x, bh.y, bh.radius, 0, Math.PI * 2);
+                ctx.fillStyle = '#0b0c10';
+                ctx.fill();
+                ctx.strokeStyle = coreColor;
+                ctx.lineWidth = 3.5;
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = coreColor;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+
+            for (let ball of balls) {
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+                ctx.fillStyle = ball.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = ball.color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            animationFrameId = requestAnimationFrame(physicsLoop);
+        }
+
+        // ==========================================
+        // 2. РЕЖИМ: ПОИСК ПУТИ В ЛАБИРИНТЕ
+        // ==========================================
+        const CELL_SIZE = 28;
+        let cols = 0, rows = 0, grid = [];
+        let startNode = null, endNode = null;
+        let currentMazeTool = 'wall';
+        let isDrawingMaze = false;
+        let searchInterval = null;
+
+        function setMazeTool(tool) {
+            currentMazeTool = tool;
+            ['Wall', 'Erase', 'Start', 'End'].forEach(t => {
+                document.getElementById('tool' + t).classList.remove('active');
+            });
+            document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1)).classList.add('active');
+        }
+
+        function initGrid() {
+            if (searchInterval) clearInterval(searchInterval);
+            cols = Math.floor(canvas.width / CELL_SIZE);
+            rows = Math.floor(canvas.height / CELL_SIZE);
+            grid = [];
+
+            for (let r = 0; r < rows; r++) {
+                let row = [];
+                for (let c = 0; c < cols; c++) {
+                    row.push({ r, c, isWall: false, visited: false, isPath: false, g: Infinity, h: 0, f: Infinity, parent: null });
+                }
+                grid.push(row);
+            }
+
+            let startR = Math.floor(rows / 2);
+            let startC = Math.min(Math.floor(cols * 0.35), cols - 1);
+            let endC = Math.min(Math.floor(cols * 0.75), cols - 1);
+
+            startNode = grid[startR][startC];
+            endNode = grid[startR][endC];
+        }
+
+        function clearPath() {
+            if (searchInterval) clearInterval(searchInterval);
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    let n = grid[r][c];
+                    n.visited = false; n.isPath = false;
+                    n.g = Infinity; n.h = 0; n.f = Infinity; n.parent = null;
+                }
+            }
+        }
+
+        function resetGrid() { initGrid(); }
+
+        function generateRandomWalls() {
+            clearPath();
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    let node = grid[r][c];
+                    if (node !== startNode && node !== endNode) node.isWall = Math.random() < 0.28;
+                }
+            }
+        }
+
+        function handleMazeClick(clientX, clientY) {
+            if (clientX < 325 && clientY < 430) return;
+            let c = Math.floor(clientX / CELL_SIZE);
+            let r = Math.floor(clientY / CELL_SIZE);
+            if (r < 0 || r >= rows || c < 0 || c >= cols) return;
+
+            let node = grid[r][c];
+            clearPath();
+
+            if (currentMazeTool === 'wall' && node !== startNode && node !== endNode) node.isWall = true;
+            else if (currentMazeTool === 'erase') node.isWall = false;
+            else if (currentMazeTool === 'start' && node !== endNode) { node.isWall = false; startNode = node; }
+            else if (currentMazeTool === 'end' && node !== startNode) { node.isWall = false; endNode = node; }
+        }
+
+        function getNeighbors(node) {
+            let neighbors = [];
+            let dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+            for (let [dr, dc] of dirs) {
+                let nr = node.r + dr, nc = node.c + dc;
+                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && !grid[nr][nc].isWall) {
+                    neighbors.push(grid[nr][nc]);
+                }
+            }
+            return neighbors;
+        }
+
+        function heuristic(a, b) { return Math.abs(a.r - b.r) + Math.abs(a.c - b.c); }
+
+        function runPathfinding() {
+            clearPath();
+            const algo = document.getElementById('algoSelect').value;
+            let openSet = [startNode];
+            let closedSet = new Set();
+
+            startNode.g = 0;
+            startNode.h = heuristic(startNode, endNode);
+            startNode.f = startNode.h;
+
+            searchInterval = setInterval(() => {
+                if (openSet.length === 0) { clearInterval(searchInterval); return; }
+
+                let currentIdx = 0;
+                if (algo === 'astar') {
+                    for (let i = 1; i < openSet.length; i++) if (openSet[i].f < openSet[currentIdx].f) currentIdx = i;
+                } else if (algo === 'dijkstra') {
+                    for (let i = 1; i < openSet.length; i++) if (openSet[i].g < openSet[currentIdx].g) currentIdx = i;
+                } else if (algo === 'greedy') {
+                    for (let i = 1; i < openSet.length; i++) if (openSet[i].h < openSet[currentIdx].h) currentIdx = i;
+                }
+
+                let current = openSet.splice(currentIdx, 1)[0];
+
+                if (current === endNode) {
+                    clearInterval(searchInterval);
+                    let temp = current.parent;
+                    while (temp && temp !== startNode) { temp.isPath = true; temp = temp.parent; }
+                    return;
+                }
+
+                closedSet.add(current);
+                if (current !== startNode) current.visited = true;
+
+                for (let neighbor of getNeighbors(current)) {
+                    if (closedSet.has(neighbor)) continue;
+                    let tempG = current.g + 1;
+                    let inOpen = openSet.includes(neighbor);
+                    if (!inOpen || tempG < neighbor.g) {
+                        neighbor.g = tempG;
+                        neighbor.h = heuristic(neighbor, endNode);
+                        neighbor.f = neighbor.g + neighbor.h;
+                        neighbor.parent = current;
+                        if (!inOpen) openSet.push(neighbor);
+                    }
+                }
+            }, 12);
+        }
+
+        function mazeLoop() {
+            if (currentMode !== 'maze') return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    let node = grid[r][c];
+                    let x = c * CELL_SIZE, y = r * CELL_SIZE;
+
+                    if (node === startNode) ctx.fillStyle = '#00ff88';
+                    else if (node === endNode) ctx.fillStyle = '#ff3366';
+                    else if (node.isWall) ctx.fillStyle = '#45a29e';
+                    else if (node.isPath) ctx.fillStyle = '#ffd700';
+                    else if (node.visited) ctx.fillStyle = 'rgba(102, 252, 241, 0.2)';
+                    else ctx.fillStyle = '#0b0c10';
+
+                    ctx.fillRect(x, y, CELL_SIZE - 1, CELL_SIZE - 1);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+                }
+            }
+            animationFrameId = requestAnimationFrame(mazeLoop);
+        }
+
+        // ==========================================
+        // 3. РЕЖИМ: ПЛАВНЫЙ АНИМИРОВАННЫЙ БИЛЬЯРД
+        // ==========================================
+        let mirrorSource = { x: 0, y: 0 };
+        let mirrorPoints = []; 
+        let animatedRays = [];
+        let isAnimatingLight = false;
+        let animationProgress = 0;
+        
+        let isUserDrawingStroke = false;
+        let tempStrokePoints = [];
+
+        const inpRayCount = document.getElementById('rayCountSlider');
+        const valRayCount = document.getElementById('valRayCount');
+        const inpRayBounces = document.getElementById('rayBouncesSlider');
+        const valRayBounces = document.getElementById('valRayBounces');
+        const inpAnimSpeed = document.getElementById('animSpeedSlider');
+        const valAnimSpeed = document.getElementById('valAnimSpeed');
+
+        inpRayCount.addEventListener('input', () => valRayCount.textContent = inpRayCount.value);
+        inpRayBounces.addEventListener('input', () => valRayBounces.textContent = inpRayBounces.value);
+        inpAnimSpeed.addEventListener('input', () => valAnimSpeed.textContent = inpAnimSpeed.value);
+
+        function clearMirrorDrawing() {
+            mirrorPoints = [];
+            animatedRays = [];
+            isAnimatingLight = false;
+        }
+
+        function loadPenrosePreset() {
+            let cx = canvas.width / 2;
+            let cy = canvas.height / 2;
+            let pts = [];
+            let steps = 30;
+
+            for (let i = 0; i <= steps; i++) {
+                let a = Math.PI * 0.5 + (Math.PI * i) / steps;
+                pts.push({ x: cx - 180 + Math.cos(a) * 110, y: cy + Math.sin(a) * 160 });
+            }
+            for (let i = 0; i <= steps; i++) {
+                let t = i / steps;
+                pts.push({ x: cx - 180 + t * 360, y: cy + 160 - Math.sin(t * Math.PI) * 40 });
+            }
+            for (let i = 0; i <= steps; i++) {
+                let a = -Math.PI * 0.5 + (Math.PI * i) / steps;
+                pts.push({ x: cx + 180 + Math.cos(a) * 110, y: cy + Math.sin(a) * 160 });
+            }
+            for (let i = 0; i <= steps; i++) {
+                let t = i / steps;
+                pts.push({ x: cx + 180 - t * 360, y: cy - 160 + Math.sin(t * Math.PI) * 40 });
+            }
+
+            mirrorPoints = pts;
+            mirrorSource = { x: cx - 180, y: cy };
+            animatedRays = [];
+            isAnimatingLight = false;
+        }
+
+        function intersectRaySegmentMirror(ox, oy, dx, dy, x1, y1, x2, y2) {
+            let v1x = ox - x1, v1y = oy - y1;
+            let v2x = x2 - x1, v2y = y2 - y1;
+            let v3x = -dy, v3y = dx;
+
+            let dot = v2x * v3x + v2y * v3y;
+            if (Math.abs(dot) < 1e-7) return null;
+
+            let t1 = (v2x * v1y - v2y * v1x) / dot;
+            let t2 = (v1x * v3x + v1y * v3y) / dot;
+
+            if (t1 > 0.05 && t2 >= 0 && t2 <= 1) {
+                let len = Math.hypot(v2x, v2y) || 1;
+                let nx = -v2y / len;
+                let ny = v2x / len;
+                return { t: t1, x: ox + dx * t1, y: oy + dy * t1, nx: nx, ny: ny };
+            }
+            return null;
+        }
+
+        function fireLightBurst() {
+            if (mirrorPoints.length < 3) {
+                alert("Сначала нарисуй замкнутую комнату одной линией или загрузи Пенроуза!");
+                return;
+            }
+
+            let rayCount = parseInt(inpRayCount.value);
+            let maxBounces = parseInt(inpRayBounces.value);
+            animatedRays = [];
+
+            for (let i = 0; i < rayCount; i++) {
+                let angle = (i / rayCount) * Math.PI * 2;
+                let rx = mirrorSource.x;
+                let ry = mirrorSource.y;
+                let dx = Math.cos(angle);
+                let dy = Math.sin(angle);
+
+                let segments = [];
+                let totalDist = 0;
+
+                for (let b = 0; b < maxBounces; b++) {
+                    let closestHit = null;
+
+                    for (let j = 0; j < mirrorPoints.length; j++) {
+                        let p1 = mirrorPoints[j];
+                        let p2 = mirrorPoints[(j + 1) % mirrorPoints.length];
+
+                        let hit = intersectRaySegmentMirror(rx, ry, dx, dy, p1.x, p1.y, p2.x, p2.y);
+                        if (hit && (!closestHit || hit.t < closestHit.t)) {
+                            closestHit = hit;
+                        }
+                    }
+
+                    if (!closestHit) {
+                        let endX = rx + dx * 2000;
+                        let endY = ry + dy * 2000;
+                        let d = Math.hypot(endX - rx, endY - ry);
+                        segments.push({ x1: rx, y1: ry, x2: endX, y2: endY, dist: d, startLen: totalDist });
+                        totalDist += d;
+                        break;
+                    }
+
+                    let d = Math.hypot(closestHit.x - rx, closestHit.y - ry);
+                    segments.push({ x1: rx, y1: ry, x2: closestHit.x, y2: closestHit.y, dist: d, startLen: totalDist });
+                    totalDist += d;
+
+                    let dot = dx * closestHit.nx + dy * closestHit.ny;
+                    dx = dx - 2 * dot * closestHit.nx;
+                    dy = dy - 2 * dot * closestHit.ny;
+                    rx = closestHit.x + dx * 0.1;
+                    ry = closestHit.y + dy * 0.1;
+                }
+
+                if (segments.length > 0) {
+                    animatedRays.push({
+                        segments: segments,
+                        totalDist: totalDist,
+                        hue: (i / rayCount) * 360
+                    });
+                }
+            }
+
+            animationProgress = 0;
+            isAnimatingLight = true;
+        }
+
+        function mirrorLoop() {
+            if (currentMode !== 'mirrorBilliard') return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = 'rgba(102, 252, 241, 0.035)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 40) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 40) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            if (mirrorPoints.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(mirrorPoints[0].x, mirrorPoints[0].y);
+                for (let i = 1; i < mirrorPoints.length; i++) {
+                    ctx.lineTo(mirrorPoints[i].x, mirrorPoints[i].y);
+                }
+                ctx.closePath();
+                ctx.strokeStyle = '#66fcf1';
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 18;
+                ctx.shadowColor = 'rgba(102, 252, 241, 0.6)';
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = 'rgba(8, 10, 16, 0.9)';
+                ctx.fill();
+            }
+
+            if (isUserDrawingStroke && tempStrokePoints.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(tempStrokePoints[0].x, tempStrokePoints[0].y);
+                for (let p of tempStrokePoints) ctx.lineTo(p.x, p.y);
+                ctx.strokeStyle = '#ff3366';
+                ctx.lineWidth = 3.5;
+                ctx.stroke();
+            }
+
+            if (isAnimatingLight) {
+                let animSpeed = parseFloat(inpAnimSpeed.value);
+                animationProgress += animSpeed;
+                if (animationProgress > 1.2) animationProgress = 1.2;
+
+                for (let ray of animatedRays) {
+                    let currentTargetLen = ray.totalDist * animationProgress;
+
+                    ctx.beginPath();
+                    let started = false;
+
+                    for (let seg of ray.segments) {
+                        if (currentTargetLen <= seg.startLen) break;
+
+                        if (!started) {
+                            ctx.moveTo(seg.x1, seg.y1);
+                            started = true;
+                        }
+
+                        if (currentTargetLen >= seg.startLen + seg.dist) {
+                            ctx.lineTo(seg.x2, seg.y2);
+                        } else {
+                            let t = (currentTargetLen - seg.startLen) / seg.dist;
+                            let partialX = seg.x1 + (seg.x2 - seg.x1) * t;
+                            let partialY = seg.y1 + (seg.y2 - seg.y1) * t;
+                            ctx.lineTo(partialX, partialY);
+                            break;
+                        }
+                    }
+
+                    if (started) {
+                        ctx.strokeStyle = `hsla(${ray.hue}, 100%, 65%, 0.35)`;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+
+                        ctx.strokeStyle = `hsla(${ray.hue}, 100%, 80%, 0.85)`;
+                        ctx.lineWidth = 0.9;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            if (mirrorPoints.length > 0) {
+                ctx.beginPath();
+                ctx.arc(mirrorSource.x, mirrorSource.y, 9, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = isAnimatingLight ? 35 : 25;
+                ctx.shadowColor = '#66fcf1';
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+
+            animationFrameId = requestAnimationFrame(mirrorLoop);
+        }
+
+        // ==========================================
+        // ОБРАБОТЧИКИ МЫШИ
+        // ==========================================
+        window.addEventListener('mousedown', (e) => {
+            if (currentMode === 'physics') {
+                if (e.clientX < 325 && e.clientY < 540) return;
+
+                if (physicsTool === 'ball') {
+                    activeBall = null;
+                    for (let ball of balls) {
+                        if (Math.hypot(e.clientX - ball.x, e.clientY - ball.y) < ball.radius) {
+                            activeBall = ball;
+                            ball.isDragging = true;
+                            ball.vx = 0; ball.vy = 0;
+                            mouseHistory = [{ x: e.clientX, y: e.clientY, time: performance.now() }];
+                            break;
+                        }
+                    }
+                    if (!activeBall) spawnBall(e.clientX, e.clientY);
+                } else if (physicsTool === 'blackhole') {
+                    spawnBlackHole(e.clientX, e.clientY);
+                }
+
+            } else if (currentMode === 'maze') {
+                isDrawingMaze = true;
+                handleMazeClick(e.clientX, e.clientY);
+
+            } else if (currentMode === 'mirrorBilliard') {
+                if (e.clientX < 325 && e.clientY < 450) return;
+                
+                isUserDrawingStroke = true;
+                tempStrokePoints = [{ x: e.clientX, y: e.clientY }];
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (currentMode === 'physics' && activeBall && activeBall.isDragging) {
+                activeBall.x = e.clientX;
+                activeBall.y = e.clientY;
+                mouseHistory.push({ x: e.clientX, y: e.clientY, time: performance.now() });
+                if (mouseHistory.length > 8) mouseHistory.shift();
+
+            } else if (currentMode === 'maze' && isDrawingMaze) {
+                handleMazeClick(e.clientX, e.clientY);
+
+            } else if (currentMode === 'mirrorBilliard' && isUserDrawingStroke) {
+                let last = tempStrokePoints[tempStrokePoints.length - 1];
+                if (Math.hypot(e.clientX - last.x, e.clientY - last.y) > 6) {
+                    tempStrokePoints.push({ x: e.clientX, y: e.clientY });
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (currentMode === 'physics' && activeBall) {
+                activeBall.isDragging = false;
+                if (mouseHistory.length >= 2) {
+                    let latest = mouseHistory[mouseHistory.length - 1];
+                    let oldest = mouseHistory[0];
+                    for (let i = 0; i < mouseHistory.length; i++) {
+                        if (latest.time - mouseHistory[i].time <= 60) { oldest = mouseHistory[i]; break; }
+                    }
+                    let dt = (latest.time - oldest.time) / 1000;
+                    if (dt > 0) {
+                        activeBall.vx = (latest.x - oldest.x) / dt * 0.05;
+                        activeBall.vy = (latest.y - oldest.y) / dt * 0.05;
+                    }
+                }
+                activeBall = null;
+                mouseHistory = [];
+
+            } else if (currentMode === 'maze') {
+                isDrawingMaze = false;
+
+            } else if (currentMode === 'mirrorBilliard' && isUserDrawingStroke) {
+                isUserDrawingStroke = false;
+                if (tempStrokePoints.length > 6) {
+                    mirrorPoints = tempStrokePoints;
+                    let cx = 0, cy = 0;
+                    for (let p of mirrorPoints) { cx += p.x; cy += p.y; }
+                    mirrorSource = { x: cx / mirrorPoints.length, y: cy / mirrorPoints.length };
+                    animatedRays = [];
+                    isAnimatingLight = false;
+                }
+                tempStrokePoints = [];
+            }
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (currentMode === 'mirrorBilliard' && mirrorPoints.length > 0 && !isUserDrawingStroke) {
+                if (e.clientX > 325 || e.clientY > 450) {
+                    mirrorSource = { x: e.clientX, y: e.clientY };
+                    animatedRays = [];
+                    isAnimatingLight = false;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
